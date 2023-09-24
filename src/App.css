@@ -68,3 +68,11 @@
 .assumption {
   width: 100%;
 }
+
+.rule-choice {
+  text-align: center;
+  justify-content: center;
+}
+
+.rule-choice > div {
+}

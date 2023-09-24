@@ -4,6 +4,7 @@ import ProofTable from './Components/ProofTable';
 import { CoqGoalInfo, Goal, GoalMap, Hypothesis } from './Components/interfaces';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { Alert } from '@mui/material';
 
 const darkTheme = createTheme({
   palette: {
@@ -141,12 +142,22 @@ function App() {
         <div className="App">
           <header className="App-header">
             {/* {proofTable} */}
+            <Alert severity="warning">
+              This tool is not yet tested.
+              Multiple tables are not fully supported by the frontend yet.
+              You can contribute <a href="https://github.com/NeuralCoder3?tab=repositories">here</a>.
+            </Alert>
+            <br />
             <ProofTable
               // @ts-ignore
               sid={window.sid}
               name='foo'
-              assumptions={[]}
-              goal='3=3 -> 4=4 -> 5=5'
+              assumptions={[
+                { name: 'X', type: 'Prop' },
+                { name: 'Y', type: 'Prop' },
+              ]}
+              // goal='3=3 -> 4=4 -> 5=5'
+              goal='X -> Y -> X /\ Y'
               goalmap={o.goalmap}
               tick={tick}
               rollback={rollback}

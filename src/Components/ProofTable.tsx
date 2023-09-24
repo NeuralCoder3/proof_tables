@@ -25,14 +25,17 @@ export default function ProofTable(props: TableProps) {
     useEffect(() => {
         let cancel = false;
         for(let i in worker.sids) {
-            if(+i>=sid+1)
+            if(+i>=sid+1) {
+                cancel = true;
                 break;
+            }
         }
         if(cancel) {
             console.log("Cancelling", sid+1, "in worker.");
             // worker.cancel(sid+1);
             // await window.sleepWait(workder.sids)
         }
+        console.log("Opening:", opening);
         console.log("Adding", sid+1, "to worker.")
         worker.add(sid, sid+1, opening);
         worker.exec(sid+1);
@@ -61,11 +64,16 @@ export default function ProofTable(props: TableProps) {
                 prevGoal={
                     props.goalmap.get(sid-1)?.[0]
                 }
+                hideAssumptions={sid === props.sid+1}
                 rule={sid in rules && rules[sid] && props.goalmap.has(sid) ?
                     rules[sid] : null}
                 rollback={() => {
                     props.rollback(sid+1);
-                    setRules({...rules, [sid]: ""});
+                    // setRules({...rules, [sid]: ""});
+                    // filter all sids larger than sid
+                    setRules(Object.fromEntries(
+                        Object.entries(rules).filter(([sid2, _]) => +sid2 < sid)
+                    ));
                 }}
                 applyRule={(rule: string) => {
                     console.log("Applying rule", rule, "to", sid);
