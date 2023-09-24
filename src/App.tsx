@@ -1,65 +1,160 @@
-import React from 'react';
-import logo from './logo.svg';
+import { useState } from 'react';
 import './App.css';
+import ProofTable from './Components/ProofTable';
+import { CoqGoalInfo, Goal, GoalMap, Hypothesis } from './Components/interfaces';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
+
 // @ts-ignore
-// import { JsCoq } from './jscoq/dist/frontend/index';
+if (!window.module_finished) {
+  // @ts-ignore
+  window.module_finished = new Promise(resolve => window.module_finished_resolve = resolve);
+}
 
+// @ts-ignore
+// await window.module_finished;
 
-import { JsCoq, CoqManager } from 'jscoq';
-    // import { JsCoq } from './node_modules/jscoq/jscoq.js';
+// @ts-ignore
+// const fpp = window.fpp;
+// @ts-ignore
+// const worker = window.worker;
 
-    // var jscoq_ids : string[] = [];
-    // var jscoq_opts = {
-    //     prelude:       true,
-    //     implicit_libs: true,
-    //     editor:        { mode: { 'company-coq': true }, keyMap: 'default' },
-    //     init_pkgs:     ['init'],
-    //     all_pkgs:      ['coq']
-    // };
+class Observer {
+  when_ready: Promise<unknown>;
+  private _ready!: (value: void) => void;
+  goalmap: GoalMap;
+  announce: () => void;
+  constructor(map: GoalMap, announce: () => void) {
+    this.goalmap = map;
+    this.announce = announce;
+    this.when_ready = new Promise<void>(resolve => this._ready = resolve);
+  }
+  coqReady() { this._ready(); }
+  coqGoalInfo(sid: number, goals: CoqGoalInfo | undefined) {
+    // @ts-ignore
+    const fpp = window.fpp;
+    console.log("State at sid", sid, goals);
+    if (!goals || !goals.goals || goals.goals.length == 0) {
+      console.log("No more goals.");
+      return;
+    }
+    const goalArray: Goal[] = [];
+    for (let i = 0; i < goals.goals.length; i++) {
+      const goal = goals.goals[i];
+      const conclusion = fpp.pp2Text(goal.ty);
+      const hypotheses: Hypothesis[] = [];
+      for (let j = 0; j < goal.hyp.length; j++) {
+        const hyp = goal.hyp[j];
+        const name = hyp[0][0][1];
+        const type = fpp.pp2Text(hyp[2]);
+        hypotheses.push({ name, type });
+      }
+      goalArray.push({ conclusion, hypotheses });
+    }
+    this.goalmap.set(sid, goalArray);
+    console.log("Set ", sid, "to", goalArray);
+    this.announce();
 
-    // const hidden_textarea = document.createElement('textarea');
-    // hidden_textarea.id = 'area';
+    // const goal0 = goals.goals[0];
+    // console.log("Goal 0:", goal0);
+    // const hyp = goal0.hyp;
+    // for (var i = 0; i < hyp.length; i++) {
+    //   const h = hyp[i];
+    //   console.log("  Hyp", i, ":", h);
+    //   const name = h[0][0][1];
+    //   const ty = h[2];
+    //   console.log("  Name:", name);
+    //   console.log("  Type:", fpp.pp2Text(ty));
+    // }
+    // const concl = goal0.ty;
+    // console.log("Conclusion:", fpp.pp2Text(concl));
+  }
+}
 
-    // JsCoq.start(jscoq_ids, jscoq_opts);
-    // JsCoq.load().then(() => {
-    //   console.log("JsCoq loaded");
-    // });
-    // JsCoq.start(['code']).then(() => {
-    //   console.log("JsCoq started");
-    // });
-    // console.log(coq);
+// this ignore is only necessary because npm run start doesn't recognize the es version
+// @ts-ignore
+await new Promise<void>(resolve => {
+  function run() {
+    // @ts-ignore
+    if (window.module_finished_loading === true)
+      resolve();
+    else
+      setTimeout(run, 100);
+  }
+  run();
+});
 
-// const coq = new CoqManager([]);
-// const coq = new CoqWorker(null,null,"js",true);
+// @ts-ignore
+const worker = window.worker;
+console.log("Let's go!")
 
-// console.log(coq);
+const goalmap: GoalMap = new Map();
+// const o = new Observer(goalmap, announcement);
+const o = new Observer(goalmap, () => { });
+worker.observers.push(o);
 
 function App() {
 
-  // const coq = JsCoq.start();
-  // const coq = new CoqManager([],
-  //   {
-  //     base_path: "../../",
-  //   }
-  //   );
+  const [tick, setTick] = useState(false);
+  // const proofTable = <ProofTable
+  //   // @ts-ignore
+  //   sid={window.sid}
+  //   name='foo'
+  //   assumptions={[]}
+  //   goal='3=3 -> 4=4 -> 5=5'
+  //   goalmap={goalmap}
+  //   tick={tick}
+  // />;
+  const announcement = () => {
+    // update the proof table
+    // console.log("Announcing change", goalmap);
+    setTick(!tick);
+  };
+  const rollback = (sid:number) => {
+    if(! (sid in worker.sids))
+      return;
+    console.log("Rolling back to", sid);
+    try{
+    worker.cancel(sid);
+    } catch(e) {
+    }
+    // remove all entries in goalmap with sid >= sid
+    for (let k of goalmap.keys()) {
+      if (k >= sid) {
+        goalmap.delete(k);
+      }
+    }
+    announcement();
+  };
+  o.announce = announcement;
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <main>
+        <div className="App">
+          <header className="App-header">
+            {/* {proofTable} */}
+            <ProofTable
+              // @ts-ignore
+              sid={window.sid}
+              name='foo'
+              assumptions={[]}
+              goal='3=3 -> 4=4 -> 5=5'
+              goalmap={o.goalmap}
+              tick={tick}
+              rollback={rollback}
+            />
+          </header>
+        </div>
+      </main>
+    </ThemeProvider>
   );
 }
 
