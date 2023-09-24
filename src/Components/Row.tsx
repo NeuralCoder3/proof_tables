@@ -82,6 +82,15 @@ const rules = [
 type ruleName = typeof rules[number]["name"];
 
 export default function Row(props: RowProps) {
+    const [rule, setRule] = useState<ruleName>("Custom");
+    const [ruleArgs, setRuleArgs] = useState<{ [i: number]: string }>({});
+    if(!props.goal) return (
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    );
     const assumptions = props.hideAssumptions ? [] : props.goal.hypotheses
         .filter(h => !props.prevGoal || !props.prevGoal.hypotheses.some(h2 => h2.name === h.name))
         .map((h, i) =>
@@ -94,8 +103,6 @@ export default function Row(props: RowProps) {
 
     // const [ruleText, setRuleText] = useState<string>("");
 
-    const [rule, setRule] = useState<ruleName>("Custom");
-    const [ruleArgs, setRuleArgs] = useState<{ [i: number]: string }>({});
     const orderedArgs : ArgType[] =
         Object.entries(ruleArgs).sort(([i1, _], [i2, __]) => +i1 - +i2).map(([_, arg]) => arg as ArgType);
 
@@ -147,7 +154,7 @@ export default function Row(props: RowProps) {
                             // label="Assumption"
                             onChange={e => {
                                 const rule = e.target.value;
-                                setRule(rule as ruleName);
+                                setRuleArgs({ ...ruleArgs, [i]: rule });
                             }}
                         >
                             {

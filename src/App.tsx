@@ -41,7 +41,7 @@ class Observer {
     // @ts-ignore
     const fpp = window.fpp;
     console.log("State at sid", sid, goals);
-    if (!goals || !goals.goals || goals.goals.length == 0) {
+    if (!goals || !goals.goals) {
       console.log("No more goals.");
       return;
     }
@@ -135,6 +135,27 @@ function App() {
   };
   o.announce = announcement;
 
+  let goal = 'X -> Y -> X /\\ Y';
+  let assumptions: Hypothesis[] = [
+                { name: 'X', type: 'Prop' },
+                { name: 'Y', type: 'Prop' },
+              ];
+  // GET request goal
+  const url = new URL(window.location.href);
+  const goalParam = url.searchParams.get("goal");
+  if(goalParam) {
+    goal = goalParam;
+  }
+  // GET request assumptions
+  // split by ; and then :
+  const assumptionsParam = url.searchParams.get("assumptions");
+  if(assumptionsParam) {
+    assumptions = assumptionsParam.split(";").map(a => {
+      const [name, type] = a.split(":");
+      return {name, type};
+    });
+  }
+
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
@@ -152,12 +173,9 @@ function App() {
               // @ts-ignore
               sid={window.sid}
               name='foo'
-              assumptions={[
-                { name: 'X', type: 'Prop' },
-                { name: 'Y', type: 'Prop' },
-              ]}
+              assumptions={assumptions}
               // goal='3=3 -> 4=4 -> 5=5'
-              goal='X -> Y -> X /\ Y'
+              goal={goal}
               goalmap={o.goalmap}
               tick={tick}
               rollback={rollback}
