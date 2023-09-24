@@ -7,37 +7,456 @@
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="Play with proof tables"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
+    <title>Proof Table</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+
+  <div id="ide-wrapper" class="toggled"
+    style="display:none">
+    <div id="code-wrapper">
+      <div id="document">
+        <div>
+          <textarea id="code1">
+Require Import Init.Prelude Unicode.Utf8.
+Require Import Lia. 
+
+Goal 3 = 3.
+          </textarea>
+          <textarea id="preload">
+(*
+Require Import Classical.
+Require Import Lia.
+Require Import Nat PeanoNat.
+Import Nat.
+*)
+(* Require Import ssreflect ssrbool. *)
+
+Ltac get_name := fresh "H0".
+
+(*
+Assumption H
+φ | φ
+*)
+Ltac assumption H :=
+  exact H.
+
+(*
+TruthIntro
+ | ⊤
+*)
+Ltac truth_intro :=
+  exact I.
+
+(*
+FalsityElim
+⊥ | χ
+*)
+Ltac falsity_elim H :=
+  exfalso; exact H.
+
+(*
+AndElim H
+φ ∧ ψ | χ
+φ, ψ  | χ
+*)
+Definition and_elim {A B P} H :=
+  fun R => @and_rect A B P R H.
+Ltac and_elim H :=
+  let H1 := fresh in
+  let H2 := get_name in
+  let H3 := get_name in
+  pose proof H as H1;
+  apply (and_elim H1); clear H1;
+  intros H2 H3.
+  (* destruct H1 as [H2 H3]. *)
+
+(*
+AndIntro
+ | φ ∧ ψ
+1) | φ
+2) | ψ
+*)
+Ltac and_intro :=
+  conj.
+  (* split. *)
+
+(*
+OrElim H
+φ ∨ ψ | χ
+1) φ | χ
+2) ψ | χ
+*)
+Ltac or_elim H :=
+  let H2 := fresh in
+  let H3 := get_name in
+  let H4 := get_name in
+  pose proof H as H2;
+  destruct H2 as [H3 | H4].
+
+(*
+OrIntro1
+ | φ ∨ ψ
+ | φ
+*)
+Ltac or_intro1 :=
+  left.
+
+(*
+OrIntro2
+ | φ ∨ ψ
+ | ψ
+*)
+Ltac or_intro2 :=
+  right.
+
+(*
+ImplApply H
+φ → ψ | ψ
+      | φ 
+*)
+Ltac impl_apply H :=
+  apply H.
+
+(*
+ImplSpecialize H H2
+φ → ψ, φ | χ
+ψ | χ
+*)
+Ltac impl_specialize H H2 :=
+  let H3 := get_name in
+  pose proof H as H3;
+  specialize (H3 H2).
+
+(*
+ImplIntro
+  | φ → ψ
+1) φ | ψ
+*)
+Ltac impl_intro :=
+  let H := get_name in
+  intro H.
+
+(*
+NegElim H
+¬φ | χ
+φ → ⊥ | χ
+*)
+Ltac neg_elim H :=
+  let H2 := get_name in
+  pose proof H as H2;
+  unfold not in H2.
+
+(*
+NegIntro
+ | ¬φ
+φ | ⊥
+*)
+Ltac neg_intro :=
+  let H := get_name in
+  unfold not; intro H.
+
+
+(*
+Assert φ
+ | χ
+1) | φ
+2) φ | χ
+*)
+(* already exists *)
+
+(*
+ExcludedMiddle φ
+ | χ
+1) ¬φ | χ
+2) φ | χ
+*)
+Ltac excluded_middle H :=
+  let H2 := get_name in
+  let H3 := get_name in
+  destruct (classic H) as [H2 | H3].
+
+(*
+ForallIntro n
+    | ∀x. φ
+y:object | φ[y/x]
+*)
+Ltac forall_intro y :=
+  intro y.
+
+(*
+ForallElim t
+∀x. φ | χ
+φ[t/x] | χ
+*)
+Ltac forall_elim H t :=
+  let H2 := get_name in
+  pose proof H as H2;
+  specialize (H2 t).
+
+(*
+ExistsIntro t
+| ∃x. φ
+| φ[t/x]
+*)
+Ltac exists_intro t :=
+  exists t.
+
+(*
+ExistsElim
+∃x. φ | χ
+y:object, φ[t/x] | χ
+*)
+Definition exists_elim {A P Q} H :=
+  fun R => @ex_ind A P Q R H.
+Ltac exists_elim H y :=
+  let H2 := get_name in
+  pose proof H as H2;
+  apply (exists_elim H2); clear H2;
+  intros y H2.
+  (* destruct H2 as [y H2]. *)
+
+(*
+EqualsIntro
+| t = t
+*)
+Ltac equals_intro :=
+  reflexivity.
+
+(*
+EqualsElim
+t = u | χ
+| χ'
+*)
+(* rename rewrite to equals_elim (including optional <- arrow) *)
+Ltac equals_elim H :=
+  rewrite H.
+Ltac equals_elim_rev H :=
+  rewrite <- H.
+
+(* Additional tactics used but not on sheet *)
+(*
+Axiom
+Defn
+*)
+Ltac defn H :=
+  unfold H in *.
+
+Ltac axiom H :=
+  (* assert H by admit. *)
+  let A := fresh "A0" in
+  pose proof H as A.
+          </textarea>
+        </div>
+      </div> <!-- /#document -->
+    </div> <!-- /#code-wrapper -->
+  </div> <!-- /#ide-wrapper -->
+
+  <script type="module">
+    import { JsCoq, FormatPrettyPrint } from './jscoq_new/jscoq.js';
+
+    var jscoq_ids = ['code1'];
+
+    window.coqdoc_ids = jscoq_ids;
+
+    var jscoq_opts = {
+      prelude: true,
+      implicit_libs: true,
+      editor: { mode: { 'company-coq': true }, keyMap: 'default' },
+      init_pkgs: ['init'],
+      all_pkgs: ['coq'],
+      debug: false,
+      node_modules_path: "./",
+
+      file_dialog: false,
+    };
+
+    // see coq-manager goNext
+    function addAndExecute(coq, sid, code) {
+      // remove comments (* ... *) (can be nested and multiline)
+      let code2 = "";
+      let i = 0;
+      let level = 0;
+      while (i < code.length) {
+        if (code[i] == '(' && code[i + 1] == '*') {
+          level++;
+          i += 2;
+        } else if (code[i] == '*' && code[i + 1] == ')') {
+          level--;
+          i += 2;
+        } else if (level == 0) {
+          code2 += code[i];
+          i++;
+        } else {
+          i++;
+        }
+      }
+      // split into sentences (end with .)
+      let sentences = code2.split('.');
+      // remove empty sentences
+      sentences = sentences.filter(s => s.trim().length > 0);
+      sentences = sentences.map(s => s.trim() + '.');
+      // add all
+      let new_sid = sid;
+      for (let i = 0; i < sentences.length; i++) {
+        const s = sentences[i];
+        coq.add(new_sid, new_sid+1, s);
+        new_sid++;
+      }
+      // execute last
+      coq.exec(new_sid);
+      // return new sid
+      return new_sid;
+    }
+
+    async function sleepWait(f) {
+      await new Promise(resolve => {
+        function run() {
+          if(f.isDone()) {
+            resolve();
+          } else {
+            setTimeout(run, 100);
+          }
+        }
+        run();
+      });
+    }
+    
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    const fpp = new FormatPrettyPrint();
+    window.fpp = fpp;
+
+    class Observer {
+      constructor() {
+        this.when_ready = new Promise(resolve => this._ready = resolve);
+      }
+      coqReady() {  this._ready(); }
+      coqGoalInfo(sid, goals) {
+        var bar = `\n${"-".repeat(60)}\n`
+        console.log("State at sid",sid, goals);
+        if(!goals || !goals.goals || goals.goals.length == 0) {
+          console.log("No more goals.");
+          return;
+        }
+        const goal0 = goals.goals[0];
+        console.log("Goal 0:",goal0);
+        const hyp = goal0.hyp;
+        for (var i = 0; i < hyp.length; i++) {
+          const h = hyp[i];
+          console.log("  Hyp",i,":",h);
+          const name =h[0][0][1];
+          const ty = h[2];
+          console.log("  Name:",name);
+          console.log("  Type:",fpp.pp2Text(ty));
+        }
+        const concl = goal0.ty;
+        console.log("Conclusion:",fpp.pp2Text(concl));
+      }
+    }
+
+    var o = new Observer;
+    const coq = await JsCoq.start(jscoq_ids, jscoq_opts);
+
+      console.log("JsCoq started", coq, coq.when_ready);
+      /** @type {CoqManager} */
+      window.coq=coq;
+
+      await coq.when_ready;
+        console.log("JsCoq ready");
+        // console.log(coq);
+        // console.log(coq.coq); 
+
+        /** @type {CoqWorker} */
+        const worker = coq.coq;
+        window.worker = worker;
+        
+        worker.observers.push(o);
+        // console.log("Worker:",worker);
+        // console.log("provider:",coq.provider);
+        const stm = {
+            coq_sid: 2,
+            text: "Require Import Init.Prelude Classical Nat PeanoNat.", // Lia
+            flags: {},
+            sp: {
+              mark: (s,m,l) => {},
+              highlight: (s,f) => {}
+            }
+            // phase, feedback
+          };
+        await coq.add(
+          stm,
+          1
+        );
+
+        // see coqpending (in manager) -> add, resolve in worker -> future in worker
+        // await sleep(2000);
+        await new Promise(resolve => {
+          function run() {
+            if(worker.sids[2].isDone()) {
+              console.log("worker ready!");
+              resolve();
+            } else {
+              setTimeout(run, 100);
+            }
+          }
+          run();
+          // worker.sids[2].promise.then(resolve);
+        });
+
+        const text = document.getElementById("preload").value;
+        const sid = addAndExecute(worker, 2, text);
+        window.sid = sid;
+        console.log("starting sid:",sid);
+
+        // worker.add(sid, sid+1, "Example E1241241: 3 = 3 -> 4=4 -> 5=5.");
+        // worker.exec(sid+1);
+        // worker.goals(sid+1);
+
+        // worker.add(sid+1, sid+2, "intro A.");
+        // worker.exec(sid+2);
+        // worker.goals(sid+2);
+
+        // worker.add(sid+2, sid+3, "intro B.");
+        // worker.exec(sid+3);
+        // worker.goals(sid+3);
+
+        // // remove element sid+2, sid+3
+        // // worker.sids.pop();
+        // // worker.sids.pop();
+        // // console.log(worker.sids);
+        // // console.log(coq.when_ready);
+        // console.log("observer promise",o.when_ready);
+        // // await o.when_ready;
+        // await sleepWait(worker.sids[sid+3]);
+        // console.log("observer ready");
+        // // worker.cancel(sid+3);
+        // worker.cancel(sid+2);
+
+        // worker.add(sid+1, sid+2, "intro C.");
+        // worker.exec(sid+2);
+        // worker.goals(sid+2);
+
+        // worker.add(sid+2, sid+3, "intro D.");
+        // worker.exec(sid+3);
+        // worker.goals(sid+3);
+
+
+        // // worker.add(sid+1, sid+4, "intro C.");
+        // // worker.exec(sid+4);
+        // // worker.goals(sid+4);
+
+        // // worker.add(sid+4, sid+5, "intro D.");
+        // // worker.exec(sid+5);
+        // // worker.goals(sid+5);
+  </script>
+
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
   </body>
 </html>
