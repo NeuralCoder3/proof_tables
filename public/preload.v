@@ -52,8 +52,8 @@ AndIntro
 2) | ψ
 *)
 Ltac and_intro :=
-  conj.
-  (* split. *)
+  (* conj. *)
+  split.
 
 (*
 OrElim H
@@ -220,3 +220,8 @@ Ltac axiom H :=
   (* assert H by admit. *)
   let A := fresh "A0" in
   pose proof H as A.
+
+
+Definition leq (x y:nat) := exists z, x+z = y.
+Notation "x <= y" := (leq x y).
+Definition even (x:nat) := exists k, x = 2*k.

@@ -12,9 +12,10 @@ export interface RowProps {
     rule: string | null
     applyRule: (rule: string) => void
     rollback: () => void
+    isHead: boolean
 }
 
-type ArgType = "Text" | "Assumption" | "Name"
+type ArgType = "Text" | "Assumption" | "Name" 
 
 interface Rule {
     name: string,
@@ -52,7 +53,7 @@ function mkAliasRule(
 }
 
 // see https://github.com/NeuralCoder3/script_proofs/blob/main/coq/tactics.v
-const rules = [
+const rules : Rule[] = [
     mkRule("Custom", ["Text"], (args: ArgType[]) => args[0]),
     mkAliasRule("Assumption", ["Assumption"]),
     mkAliasRule("TruthIntro", []),
@@ -70,7 +71,8 @@ const rules = [
     mkAliasRule("Assert", ["Text"]),
     mkAliasRule("ExcludedMiddle", ["Text"]),
     mkAliasRule("ForallIntro", ["Name"]),
-    mkAliasRule("ForallElim", ["Assumption", "Name"]),
+    mkAliasRule("ForallElim", ["Assumption", "Text"]),
+    mkAliasRule("ExistsIntro", ["Text"]),
     mkAliasRule("ExistsElim", ["Assumption"]),
     mkAliasRule("EqualsIntro", []),
     mkAliasRule("EqualsElim", ["Assumption"]),
@@ -92,7 +94,7 @@ export default function Row(props: RowProps) {
         </tr>
     );
     const assumptions = props.hideAssumptions ? [] : props.goal.hypotheses
-        .filter(h => !props.prevGoal || !props.prevGoal.hypotheses.some(h2 => h2.name === h.name))
+        .filter(h => !props.prevGoal || !props.prevGoal.hypotheses.some(h2 => h2.name === h.name && h2.type === h.type))
         .map((h, i) =>
             <div key={i} className="assumption">
                 <span className="name">{h.name}</span>
@@ -105,6 +107,8 @@ export default function Row(props: RowProps) {
 
     const orderedArgs : ArgType[] =
         Object.entries(ruleArgs).sort(([i1, _], [i2, __]) => +i1 - +i2).map(([_, arg]) => arg as ArgType);
+
+    const selectedRule = rules.find(r => r.name === rule);
 
     const ruleChoice =
         (<div className="rule-choice">
@@ -127,7 +131,7 @@ export default function Row(props: RowProps) {
                 }
             </Select>
             {
-                rules.find(r => r.name === rule)?.args.map((arg, i) => {
+                selectedRule?.args.map((arg, i) => {
                     if (arg === "Text") {
                         return(
                         <TextField
@@ -140,11 +144,11 @@ export default function Row(props: RowProps) {
                             onChange={e => {
                                 setRuleArgs({ ...ruleArgs, [i]: e.target.value });
                             }}
-                        // onKeyDown={e => {
-                        //     if (e.key === "Enter") {
-                        //         // props.applyRule(rules.find(r => r.name === rule)?.builder(ruleArgs) || "");
-                        //     }
-                        // }}
+                        onKeyDown={e => {
+                            if (e.key === "Enter" && selectedRule?.args.length === 1) {
+                                props.applyRule(selectedRule?.builder(orderedArgs) || "");
+                            }
+                        }}
                         />);
                     } else if (arg === "Assumption") {
                         return (<Select
@@ -181,7 +185,7 @@ export default function Row(props: RowProps) {
             }
             <IconButton
                 onClick={() => {
-                    props.applyRule(rules.find(r => r.name === rule)?.builder(orderedArgs) || "");
+                    props.applyRule(selectedRule?.builder(orderedArgs) || "");
                 }}
                 size="small"
                 sx={{ color: 'white' }}
@@ -189,28 +193,15 @@ export default function Row(props: RowProps) {
                 <LoginIcon />
             </IconButton>
         </div>);
-    // <TextField
-    //     label="Rule"
-    //     variant="outlined"
-    //     size="small"
-    //     sx={{ input: { color: 'white' } }}
-    //     value={rule}
-    //     onChange={e => setRule(e.target.value)}
-    //     onKeyDown={e => {
-    //         if (e.key === "Enter") {
-    //             props.applyRule(rule);
-    //         }
-    //     }}
-    // />;
 
     return (
-        <tr>
+        <tr className={props.isHead ? "proofhead" : ""}>
             <td>{assumptions}</td>
             <td>{props.goal.conclusion}</td>
             <td>
                 {props.rule ?
                     (
-                        <div>
+                        <div className="selected">
                             <IconButton
                                 onClick={props.rollback}
                                 size="small"

@@ -18,14 +18,6 @@ if (!window.module_finished) {
   window.module_finished = new Promise(resolve => window.module_finished_resolve = resolve);
 }
 
-// @ts-ignore
-// await window.module_finished;
-
-// @ts-ignore
-// const fpp = window.fpp;
-// @ts-ignore
-// const worker = window.worker;
-
 class Observer {
   when_ready: Promise<unknown>;
   private _ready!: (value: void) => void;
@@ -37,12 +29,19 @@ class Observer {
     this.when_ready = new Promise<void>(resolve => this._ready = resolve);
   }
   coqReady() { this._ready(); }
+  coqError() { 
+    console.log("Error in coq");
+  }
+  coqExn() { 
+    console.log("Exception in coq");
+  }
   coqGoalInfo(sid: number, goals: CoqGoalInfo | undefined) {
     // @ts-ignore
     const fpp = window.fpp;
     console.log("State at sid", sid, goals);
     if (!goals || !goals.goals) {
       console.log("No more goals.");
+      // this.goalmap.set(sid,null);
       return;
     }
     const goalArray: Goal[] = [];
@@ -103,15 +102,6 @@ worker.observers.push(o);
 function App() {
 
   const [tick, setTick] = useState(false);
-  // const proofTable = <ProofTable
-  //   // @ts-ignore
-  //   sid={window.sid}
-  //   name='foo'
-  //   assumptions={[]}
-  //   goal='3=3 -> 4=4 -> 5=5'
-  //   goalmap={goalmap}
-  //   tick={tick}
-  // />;
   const announcement = () => {
     // update the proof table
     // console.log("Announcing change", goalmap);
@@ -135,10 +125,12 @@ function App() {
   };
   o.announce = announcement;
 
-  let goal = 'X -> Y -> X /\\ Y';
+  // let goal = 'X -> X -> X \\/ Y';
+  let goal = '(X /\\ Y) /\\ Z -> X /\\ (Y /\\ Z)';
   let assumptions: Hypothesis[] = [
                 { name: 'X', type: 'Prop' },
                 { name: 'Y', type: 'Prop' },
+                { name: 'Z', type: 'Prop' },
               ];
   // GET request goal
   const url = new URL(window.location.href);
@@ -165,8 +157,8 @@ function App() {
             {/* {proofTable} */}
             <Alert severity="warning">
               This tool is not yet tested.
-              Multiple tables are not fully supported by the frontend yet.
-              You can contribute <a href="https://github.com/NeuralCoder3?tab=repositories">here</a>.
+              {/* Multiple tables are not fully supported by the frontend yet. */}
+              You can contribute <a href="https://github.com/NeuralCoder3/proof_tables/tree/master">here</a>.
             </Alert>
             <br />
             <ProofTable
@@ -174,7 +166,6 @@ function App() {
               sid={window.sid}
               name='foo'
               assumptions={assumptions}
-              // goal='3=3 -> 4=4 -> 5=5'
               goal={goal}
               goalmap={o.goalmap}
               tick={tick}

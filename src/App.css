@@ -46,7 +46,7 @@
 
 .prooftable {
   border-collapse: collapse;
-  width: 100%;
+  /* width: 100%; */
   border: 3px solid #ddd;
 }
 
@@ -79,4 +79,58 @@
 
 .finished {
   background-color: #266239;
+}
+
+.selected {
+
+}
+
+/* 
+  last row with a div child (in td) with css class .selected 
+*/
+/* .prooftable tr:last-child :has(> div.selected) .proofhead {
+  background-color: #ff0000;
+} */
+.proofhead :has(>  div.selected) {
+  background-color: #ff0000;
+}
+
+/* has no proofhead and rule-choice (deeply nested) */
+/* .prooftable :not(.proofhead, .rule-choice) > div.selected {
+  background-color: #042a19;
+} */
+
+.subprooftable {
+  /* display: inline-block; */
+  float: left;
+  margin:2px;
+}
+
+.proofcontainer {
+  width: 90%;
+  /* only show scroll bar if needed */
+  overflow-x: auto;
+  align-content: center;
+  justify-content: center;
+}
+
+.prooftable {
+    display: inline-block;
+}
+
+.prooftable, .prooftable th, .prooftable td, .prooftable tr, .prooftable tbody, .prooftable thead {
+  width: max-content;
+}
+.prooftable td > .subprooftable {
+  /* all divs at top */
+  vertical-align: top;
+  align-items: baseline;
+    display: flex;
+}
+
+.proofblock {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  /* border: 1px solid black; */
 }
