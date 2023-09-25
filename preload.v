@@ -224,3 +224,4 @@ Ltac axiom H :=
 
 Definition leq (x y:nat) := exists z, x+z = y.
 Notation "x <= y" := (leq x y).
+Definition even (x:nat) := exists k, x = 2*k.
