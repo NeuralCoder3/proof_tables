@@ -52,8 +52,8 @@ AndIntro
 2) | ψ
 *)
 Ltac and_intro :=
-  conj.
-  (* split. *)
+  (* conj. *)
+  split.
 
 (*
 OrElim H
