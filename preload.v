@@ -220,3 +220,7 @@ Ltac axiom H :=
   (* assert H by admit. *)
   let A := fresh "A0" in
   pose proof H as A.
+
+
+Definition leq (x y:nat) := exists z, x+z = y.
+Notation "x <= y" := (leq x y).
