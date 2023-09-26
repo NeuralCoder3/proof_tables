@@ -37,7 +37,8 @@ class HeadlessCoqWorker extends CoqWorker {
 
     static instance() {
         global.FormData = undefined; /* prevent a silly warning about experimental fetch API */
-        var jscoq = require('../coq-js/jscoq_worker.bc.cjs').jsCoq;
+        // var jscoq = require('../coq-js/jscoq_worker.bc.cjs').jsCoq;
+        var jscoq = require('../coq-js/jscoq_worker.js').jsCoq;
         /** @oops monkey-patch to make it look like a Worker instance */
         jscoq.addEventListener = (_: "message", handler: () => void) =>
             jscoq.onmessage = handler;
