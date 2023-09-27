@@ -186,9 +186,9 @@ Definition exists_elim {A P Q} H :=
 Ltac exists_elim H y :=
   let H2 := get_name in
   pose proof H as H2;
-  apply (exists_elim H2); clear H2;
-  intros y H2.
-  (* destruct H2 as [y H2]. *)
+  (* apply (exists_elim H2); clear H2;
+  intros y H2. *)
+  destruct H2 as [y H2].
 
 (*
 EqualsIntro
