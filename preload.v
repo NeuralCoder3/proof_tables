@@ -181,8 +181,8 @@ ExistsElim
 ∃x. φ | χ
 y:object, φ[t/x] | χ
 *)
-Definition exists_elim {A P Q} H :=
-  fun R => @ex_ind A P Q R H.
+(* Definition exists_elim {A P Q} H :=
+  fun R => @ex_ind A P Q R H. *)
 Ltac exists_elim H y :=
   let H2 := get_name in
   pose proof H as H2;
