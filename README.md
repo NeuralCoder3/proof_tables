@@ -2,7 +2,8 @@
 
 
 TODOs:
-- [ ] load and save Coq scripts
+- [ ] load Coq scripts
+    - [ ] input preamble
 - [ ] recognize errors semantically
 - [ ] make firefox work
 - [ ] add custom definitions (<, >, >=, odd)

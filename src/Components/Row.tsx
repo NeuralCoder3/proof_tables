@@ -6,12 +6,13 @@ import UndoIcon from '@mui/icons-material/Undo';
 import LoginIcon from '@mui/icons-material/Login';
 
 export interface RowProps {
-    hideAssumptions: boolean
+    isInitial: boolean
     prevGoal?: Goal
     goal: Goal
     rule: string | null
     applyRule: (rule: string) => void
     rollback: () => void
+    setGoal: (goal:string) => void
     isHead: boolean
 }
 
@@ -73,7 +74,7 @@ const rules : Rule[] = [
     mkAliasRule("ForallIntro", ["Name"]),
     mkAliasRule("ForallElim", ["Assumption", "Text"]),
     mkAliasRule("ExistsIntro", ["Text"]),
-    mkAliasRule("ExistsElim", ["Assumption"]),
+    mkAliasRule("ExistsElim", ["Assumption","Name"]),
     mkAliasRule("EqualsIntro", []),
     mkAliasRule("EqualsElim", ["Assumption"]),
     mkAliasRule("EqualsElimRev", ["Assumption"]),
@@ -86,6 +87,7 @@ type ruleName = typeof rules[number]["name"];
 export default function Row(props: RowProps) {
     const [rule, setRule] = useState<ruleName>("Custom");
     const [ruleArgs, setRuleArgs] = useState<{ [i: number]: string }>({});
+    const [conclusionText, setConclusionText] = useState(props.goal.conclusion);
     if(!props.goal) return (
         <tr>
             <td></td>
@@ -93,7 +95,7 @@ export default function Row(props: RowProps) {
             <td></td>
         </tr>
     );
-    const assumptions = props.hideAssumptions ? [] : props.goal.hypotheses
+    const assumptions = props.isInitial ? [] : props.goal.hypotheses
         .filter(h => !props.prevGoal || !props.prevGoal.hypotheses.some(h2 => h2.name === h.name && h2.type === h.type))
         .map((h, i) =>
             <div key={i} className="assumption">
@@ -102,8 +104,6 @@ export default function Row(props: RowProps) {
                 <span className="type">{h.type}</span>
             </div>
         );
-
-    // const [ruleText, setRuleText] = useState<string>("");
 
     const orderedArgs : ArgType[] =
         Object.entries(ruleArgs).sort(([i1, _], [i2, __]) => +i1 - +i2).map(([_, arg]) => arg as ArgType);
@@ -132,7 +132,7 @@ export default function Row(props: RowProps) {
             </Select>
             {
                 selectedRule?.args.map((arg, i) => {
-                    if (arg === "Text") {
+                    if (arg === "Text" || arg === "Name") {
                         return(
                         <TextField
                             key={i}
@@ -142,10 +142,14 @@ export default function Row(props: RowProps) {
                             sx={{ input: { color: 'white' } }}
                             value={ruleArgs[i]}
                             onChange={e => {
-                                setRuleArgs({ ...ruleArgs, [i]: e.target.value });
+                                setRuleArgs({ ...ruleArgs, [i]: 
+                                    arg === "Name" ? 
+                                    e.target.value.replace(/\s+/g, "") : // remove whitespace
+                                    e.target.value 
+                                });
                             }}
                         onKeyDown={e => {
-                            if (e.key === "Enter" && selectedRule?.args.length === 1) {
+                            if (e.key === "Enter") {
                                 props.applyRule(selectedRule?.builder(orderedArgs) || "");
                             }
                         }}
@@ -155,7 +159,6 @@ export default function Row(props: RowProps) {
                             id="assumption-selector"
                             key = {i}
                             value={ruleArgs[i]}
-                            // label="Assumption"
                             onChange={e => {
                                 const rule = e.target.value;
                                 setRuleArgs({ ...ruleArgs, [i]: rule });
@@ -167,20 +170,7 @@ export default function Row(props: RowProps) {
                                 )
                             }
                         </Select>);
-                    } else if (arg === "Name") {
-                        return(
-                        <TextField
-                            key={i}
-                            label={arg}
-                            variant="outlined"
-                            size="small"
-                            sx={{ input: { color: 'white' } }}
-                            value={ruleArgs[i]}
-                            onChange={e => {
-                                setRuleArgs({ ...ruleArgs, [i]: e.target.value.replace(/\s+/g, "") });
-                            }}
-                        />);
-                    }
+                    } 
                 })
             }
             <IconButton
@@ -194,10 +184,32 @@ export default function Row(props: RowProps) {
             </IconButton>
         </div>);
 
+    let conclusion  = <>props.goal.conclusion</>;
+    if(props.isInitial) {
+        conclusion = (
+                        <TextField
+                            label={"Goal"}
+                            variant="outlined"
+                            size="small"
+                            sx={{ input: { color: 'white' } }}
+                            value={conclusionText}
+                            onChange={e => {
+                                setConclusionText(e.target.value);
+                            }}
+                        onKeyDown={e => {
+                            if (e.key === "Enter") {
+                                props.setGoal(conclusionText);
+                            }
+                        }}
+                        />
+        );
+    }
+
+
     return (
         <tr className={props.isHead ? "proofhead" : ""}>
             <td>{assumptions}</td>
-            <td>{props.goal.conclusion}</td>
+            <td>{conclusion}</td>
             <td>
                 {props.rule ?
                     (

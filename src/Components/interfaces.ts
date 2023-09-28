@@ -28,9 +28,4 @@ export interface Goal {
     conclusion: string;
 }
 
-export interface Assumption {
-    name: string;
-    type: string;
-}
-
 export type GoalMap = Map<number, Goal[]>;

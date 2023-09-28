@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import Row from "./Row";
-import { Assumption, GoalMap } from "./interfaces";
-import { Button, IconButton } from "@mui/material";
+import { GoalMap, Hypothesis } from "./interfaces";
+import { Button } from "@mui/material";
 import { InputDialog } from "./InputDialog";
 
 export interface TableProps {
     sid: number,
     name: string,
-    assumptions: Assumption[],
-    goal: string,
     goalmap: GoalMap,
     tick: boolean,
     rollback: (sid: number) => void
@@ -25,9 +23,35 @@ interface RowTree {
 
 export default function ProofTable(props: TableProps) {
 
+  // let goal = 'X -> X -> X \\/ Y';
+  let initGoal = '(X /\\ Y) /\\ Z -> X /\\ (Y /\\ Z)';
+  let initAssumptions: Hypothesis[] = [
+                { name: 'X', type: 'Prop' },
+                { name: 'Y', type: 'Prop' },
+                { name: 'Z', type: 'Prop' },
+              ];
+  // GET request goal
+  const url = new URL(window.location.href);
+  const goalParam = url.searchParams.get("goal");
+  if(goalParam) {
+    initGoal = goalParam;
+  }
+  // GET request assumptions
+  // split by ; and then :
+  const assumptionsParam = url.searchParams.get("assumptions");
+  if(assumptionsParam) {
+    initAssumptions = assumptionsParam.split(";").map(a => {
+      const [name, type] = a.split(":");
+      return {name, type};
+    });
+  }
+
+    const [goal, setGoal] = useState<string>(initGoal);
+    const [assumptions, setAssumptions] = useState<Hypothesis[]>(initAssumptions);
+
     const opening = `Lemma ${props.name} ` +
-        props.assumptions.map(a => "(" + a.name + " : " + a.type + ")").join(" ") +
-        `: ${props.goal}.`;
+        assumptions.map(a => "(" + a.name + " : " + a.type + ")").join(" ") +
+        `: ${goal}.`;
 
     const sid = props.sid;
     // @ts-ignore
@@ -51,9 +75,53 @@ export default function ProofTable(props: TableProps) {
         worker.add(sid, sid + 1, opening);
         worker.exec(sid + 1);
         worker.goals(sid + 1);
-    }, [opening]);
+    }, [opening, sid, worker]);
 
     const [rules, setRules] = useState<{ [sid: number]: string }>({});
+
+    const overwriteGoal = (goal: string) => {
+        props.rollback(props.sid+1);
+        setRules(Object.fromEntries(
+            Object.entries(rules).filter(([sid2, _]) => +sid2 < props.sid+1)
+        ));
+        let newAssumptions : Hypothesis[] = [];
+        // parse away all "forall ([name]:[type]),"
+        let newGoal = goal;
+        while(newGoal.startsWith("forall")){
+            // get part until first comma
+            const i = newGoal.indexOf(",");
+            const part = newGoal.substring(0,i+1).trim();
+            if (part.indexOf(":") === -1) break;
+            // only second order parameters
+            if (part.indexOf("Prop") === -1) break;
+            // remove part from goal
+            newGoal = newGoal.substring(i+1).trim();
+            // get name and type
+            const [name, type] = part
+            .replace("forall","")
+            // replace last ,
+            .replace(/,(?=[^,]*$)/, "")
+            .trim()
+            // replace first ( and last )
+            .replace(/^\(/, "")
+            .replace(/\)$/, "")
+            .split(":").map(s => s.trim());
+            newAssumptions.push({name,type});
+        }
+        setGoal(newGoal);
+        setAssumptions(oldAssumptions => 
+            oldAssumptions.filter(a =>
+                !newAssumptions.some(a2 => a2.name === a.name)
+            ).concat(newAssumptions)
+        );
+        // update url
+        const url = new URL(window.location.href);
+        url.searchParams.set("goal", encodeURIComponent(newGoal));
+        url.searchParams.set("assumptions", encodeURIComponent(
+            newAssumptions.map(a => a.name+":"+a.type).join(";")
+        ));
+        window.history.replaceState({}, "", url.toString());
+    }
 
     const headSid = Math.max(...Array.from(props.goalmap.keys()));
     const rows : [number,JSX.Element][] =
@@ -77,7 +145,7 @@ export default function ProofTable(props: TableProps) {
                     prevGoal={
                         props.goalmap.get(sid - 1)?.[0]
                     }
-                    hideAssumptions={sid === props.sid + 1}
+                    isInitial={sid === props.sid + 1}
                     rule={sid in rules && rules[sid] && props.goalmap.has(sid) ?
                         rules[sid] : null}
                     rollback={() => {
@@ -100,6 +168,7 @@ export default function ProofTable(props: TableProps) {
                         worker.exec(sid + 1);
                         worker.goals(sid + 1);
                     }}
+                    setGoal={overwriteGoal}
                 />
                 ]
             );

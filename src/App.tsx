@@ -125,28 +125,6 @@ function App() {
   };
   o.announce = announcement;
 
-  // let goal = 'X -> X -> X \\/ Y';
-  let goal = '(X /\\ Y) /\\ Z -> X /\\ (Y /\\ Z)';
-  let assumptions: Hypothesis[] = [
-                { name: 'X', type: 'Prop' },
-                { name: 'Y', type: 'Prop' },
-                { name: 'Z', type: 'Prop' },
-              ];
-  // GET request goal
-  const url = new URL(window.location.href);
-  const goalParam = url.searchParams.get("goal");
-  if(goalParam) {
-    goal = goalParam;
-  }
-  // GET request assumptions
-  // split by ; and then :
-  const assumptionsParam = url.searchParams.get("assumptions");
-  if(assumptionsParam) {
-    assumptions = assumptionsParam.split(";").map(a => {
-      const [name, type] = a.split(":");
-      return {name, type};
-    });
-  }
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -165,8 +143,6 @@ function App() {
               // @ts-ignore
               sid={window.sid}
               name='foo'
-              assumptions={assumptions}
-              goal={goal}
               goalmap={o.goalmap}
               tick={tick}
               rollback={rollback}
