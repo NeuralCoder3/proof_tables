@@ -29,10 +29,10 @@ class Observer {
     this.when_ready = new Promise<void>(resolve => this._ready = resolve);
   }
   coqReady() { this._ready(); }
-  coqError() { 
+  coqError() {
     console.log("Error in coq");
   }
-  coqExn() { 
+  coqExn() {
     console.log("Exception in coq");
   }
   coqGoalInfo(sid: number, goals: CoqGoalInfo | undefined) {
@@ -41,39 +41,26 @@ class Observer {
     console.log("State at sid", sid, goals);
     if (!goals || !goals.goals) {
       console.log("No more goals.");
-      // this.goalmap.set(sid,null);
       return;
     }
     const goalArray: Goal[] = [];
     for (let i = 0; i < goals.goals.length; i++) {
       const goal = goals.goals[i];
       const conclusion = fpp.pp2Text(goal.ty);
+      const conclusionHTML = fpp.pp2HTML(goal.ty);
       const hypotheses: Hypothesis[] = [];
       for (let j = 0; j < goal.hyp.length; j++) {
         const hyp = goal.hyp[j];
         const name = hyp[0][0][1];
         const type = fpp.pp2Text(hyp[2]);
-        hypotheses.push({ name, type });
+        const typeHTML = fpp.pp2HTML(hyp[2]);
+        hypotheses.push({ name, type, typeHTML });
       }
-      goalArray.push({ conclusion, hypotheses });
+      goalArray.push({ conclusion, conclusionHTML, hypotheses });
     }
     this.goalmap.set(sid, goalArray);
     console.log("Set ", sid, "to", goalArray);
     this.announce();
-
-    // const goal0 = goals.goals[0];
-    // console.log("Goal 0:", goal0);
-    // const hyp = goal0.hyp;
-    // for (var i = 0; i < hyp.length; i++) {
-    //   const h = hyp[i];
-    //   console.log("  Hyp", i, ":", h);
-    //   const name = h[0][0][1];
-    //   const ty = h[2];
-    //   console.log("  Name:", name);
-    //   console.log("  Type:", fpp.pp2Text(ty));
-    // }
-    // const concl = goal0.ty;
-    // console.log("Conclusion:", fpp.pp2Text(concl));
   }
 }
 
@@ -95,7 +82,6 @@ const worker = window.worker;
 console.log("Let's go!")
 
 const goalmap: GoalMap = new Map();
-// const o = new Observer(goalmap, announcement);
 const o = new Observer(goalmap, () => { });
 worker.observers.push(o);
 
@@ -103,17 +89,16 @@ function App() {
 
   const [tick, setTick] = useState(false);
   const announcement = () => {
-    // update the proof table
-    // console.log("Announcing change", goalmap);
+    // force update the proof table -- deep updates in the properties are not detected
     setTick(!tick);
   };
-  const rollback = (sid:number) => {
-    if(! (sid in worker.sids))
+  const rollback = (sid: number) => {
+    if (!(sid in worker.sids))
       return;
     console.log("Rolling back to", sid);
-    try{
-    worker.cancel(sid);
-    } catch(e) {
+    try {
+      worker.cancel(sid);
+    } catch (e) {
     }
     // remove all entries in goalmap with sid >= sid
     for (let k of goalmap.keys()) {
@@ -132,10 +117,8 @@ function App() {
       <main>
         <div className="App">
           <header className="App-header">
-            {/* {proofTable} */}
             <Alert severity="warning">
               This tool is not yet tested.
-              {/* Multiple tables are not fully supported by the frontend yet. */}
               You can contribute <a href="https://github.com/NeuralCoder3/proof_tables/tree/master">here</a>.
             </Alert>
             <br />

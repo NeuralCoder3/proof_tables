@@ -1,31 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Play with proof tables"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>Proof Table</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
 
-  <div id="ide-wrapper" class="toggled"
-    style="display:none">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Play with proof tables" />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <link rel="stylesheet" href="%PUBLIC_URL%/coq-dark.css" />
+  <title>Proof Table</title>
+
+  <!-- Primary Meta Tags -->
+  <title>Interactive Proof Table Tool</title>
+  <meta name="title" content="Interactive Proof Table Tool" />
+  <meta name="description" content="Proof your mathematical theorems formally in an interactive way using proof tables." />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="%PUBLIC_URL%/" />
+  <meta property="og:title" content="Interactive Proof Table Tool" />
+  <meta property="og:description" content="Proof your mathematical theorems formally in an interactive way using proof tables." />
+  <meta property="og:image" content="%PUBLIC_URL%/logo512.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="%PUBLIC_URL%/" />
+  <meta property="twitter:title" content="Interactive Proof Table Tool" />
+  <meta property="twitter:description" content="Proof your mathematical theorems formally in an interactive way using proof tables." />
+  <meta property="twitter:image" content="%PUBLIC_URL%/logo512.png" />
+
+  <!-- Meta Tags Generated with https://metatags.io -->
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+
+  <!-- 
+    Code wrapper for jscoq environment to use JsCoq toplevel loader + CoqManager
+    instead of completely manual controlling of CoqWorker
+  -->
+  <div id="ide-wrapper" class="toggled" style="display:none">
     <div id="code-wrapper">
       <div id="document">
         <div>
           <textarea id="code1">
-Require Import Init.Prelude Unicode.Utf8.
-Require Import Lia. 
-
-Goal 3 = 3.
           </textarea>
         </div>
       </div> <!-- /#document -->
@@ -48,6 +68,7 @@ Goal 3 = 3.
       prelude: true,
       implicit_libs: true,
       editor: { mode: { 'company-coq': true }, keyMap: 'default' },
+      theme: 'dark',
       init_pkgs: ['init'],
       all_pkgs: ['coq'],
       debug: false,
@@ -85,19 +106,18 @@ Goal 3 = 3.
       let new_sid = sid;
       for (let i = 0; i < sentences.length; i++) {
         const s = sentences[i];
-        coq.add(new_sid, new_sid+1, s);
+        coq.add(new_sid, new_sid + 1, s);
         new_sid++;
       }
       // execute last
       coq.exec(new_sid);
-      // return new sid
       return new_sid;
     }
 
     async function sleepWait(f) {
       await new Promise(resolve => {
         function run() {
-          if(f.isDone()) {
+          if (f.isDone()) {
             resolve();
           } else {
             setTimeout(run, 100);
@@ -106,112 +126,62 @@ Goal 3 = 3.
         run();
       });
     }
-    
+
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     const coq = await JsCoq.start(jscoq_ids, jscoq_opts);
 
-      console.log("JsCoq started", coq, coq.when_ready);
-      /** @type {CoqManager} */
-      window.coq=coq;
+    console.log("JsCoq started", coq, coq.when_ready);
+    /** @type {CoqManager} */
+    window.coq = coq;
 
-        await coq.when_ready;
-        console.log("JsCoq ready");
-        // console.log(coq);
-        // console.log(coq.coq); 
+    await coq.when_ready;
+    console.log("JsCoq ready");
 
-        /** @type {CoqWorker} */
-        const worker = coq.coq;
-        window.worker = worker;
-        
-        // worker.observers.push(o);
-        // console.log("Worker:",worker);
-        // console.log("provider:",coq.provider);
-        const stm = {
-            coq_sid: 2,
-            text: "Require Import Init.Prelude Classical Nat PeanoNat.", // Lia
-            flags: {},
-            sp: {
-              mark: (s,m,l) => {},
-              highlight: (s,f) => {}
-            }
-            // phase, feedback
-          };
-        await coq.add(
-          stm,
-          1
-        );
+    /** @type {CoqWorker} */
+    const worker = coq.coq;
+    window.worker = worker;
 
-        // see coqpending (in manager) -> add, resolve in worker -> future in worker
-        // await sleep(2000);
-        await new Promise(resolve => {
-          function run() {
-            if(worker.sids[2].isDone()) {
-              console.log("worker ready!");
-              resolve();
-            } else {
-              setTimeout(run, 100);
-            }
-          }
-          run();
-          // worker.sids[2].promise.then(resolve);
-        });
+    const stm = {
+      coq_sid: 2,
+      text: "Require Import Init.Prelude Classical Nat PeanoNat.", // Lia
+      flags: {},
+      sp: {
+        mark: (s, m, l) => { },
+        highlight: (s, f) => { }
+      }
+    };
+    await coq.add(
+      stm,
+      1
+    );
 
-        // load preload.v file
-        const text = await (await fetch("%PUBLIC_URL%/preload.v")).text();
+    // this is needed as unwrapped toplevel promises in this setting are never resolved
+    await new Promise(resolve => {
+      function run() {
+        if (worker.sids[2].isDone()) {
+          console.log("worker ready!");
+          resolve();
+        } else {
+          setTimeout(run, 100);
+        }
+      }
+      run();
+    });
+    const text = await (await fetch("%PUBLIC_URL%/preload.v")).text();
 
-        const sid = addAndExecute(worker, 2, text);
-        window.sid = sid;
-        console.log("starting sid:",sid);
+    const sid = addAndExecute(worker, 2, text);
+    window.sid = sid;
+    console.log("starting sid:", sid);
 
-        // worker.add(sid, sid+1, "Example E1241241: 3 = 3 -> 4=4 -> 5=5.");
-        // worker.exec(sid+1);
-        // worker.goals(sid+1);
-
-        // worker.add(sid+1, sid+2, "intro A.");
-        // worker.exec(sid+2);
-        // worker.goals(sid+2);
-
-        // worker.add(sid+2, sid+3, "intro B.");
-        // worker.exec(sid+3);
-        // worker.goals(sid+3);
-
-        // // remove element sid+2, sid+3
-        // // worker.sids.pop();
-        // // worker.sids.pop();
-        // // console.log(worker.sids);
-        // // console.log(coq.when_ready);
-        // console.log("observer promise",o.when_ready);
-        // // await o.when_ready;
-        // await sleepWait(worker.sids[sid+3]);
-        // console.log("observer ready");
-        // // worker.cancel(sid+3);
-        // worker.cancel(sid+2);
-
-        // worker.add(sid+1, sid+2, "intro C.");
-        // worker.exec(sid+2);
-        // worker.goals(sid+2);
-
-        // worker.add(sid+2, sid+3, "intro D.");
-        // worker.exec(sid+3);
-        // worker.goals(sid+3);
-
-
-        // // worker.add(sid+1, sid+4, "intro C.");
-        // // worker.exec(sid+4);
-        // // worker.goals(sid+4);
-
-        // // worker.add(sid+4, sid+5, "intro D.");
-        // // worker.exec(sid+5);
-        // // worker.goals(sid+5);
-
-        window.module_finished_resolve();
-        window.module_finished_loading = true;
-        console.log("module finished", window.module_finished);
+    window.module_finished_resolve();
+    window.module_finished_loading = true;
+    console.log("module finished", window.module_finished);
   </script>
 
-    <div id="root"></div>
-  </body>
+  <div id="root"></div>
+</body>
+
 </html>

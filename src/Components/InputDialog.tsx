@@ -38,7 +38,6 @@ export function InputDialog({
     >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
-        {/* <DialogContentText>{description}</DialogContentText> */}
         <DialogContentText>
           <div dangerouslySetInnerHTML={{ __html: description }} />
         </DialogContentText>

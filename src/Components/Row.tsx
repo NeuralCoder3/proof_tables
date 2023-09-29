@@ -101,7 +101,12 @@ export default function Row(props: RowProps) {
             <div key={i} className="assumption">
                 <span className="name">{h.name}</span>
                 <span className="colon">:</span>
-                <span className="type">{h.type}</span>
+                {
+                    h.typeHTML ?
+                        <span className="type" dangerouslySetInnerHTML={{ __html: h.typeHTML }} />
+                        :
+                        <span className="type">{h.type}</span>
+                }
             </div>
         );
 
@@ -113,7 +118,7 @@ export default function Row(props: RowProps) {
     const ruleChoice =
         (<div className="rule-choice">
             {/* a dropdown to choose a rule */}
-            {/* if selected show assumption fields */}
+            {/* when selected show assumption fields */}
             <Select
                 id="rule-selector"
                 value={rule}
@@ -184,7 +189,7 @@ export default function Row(props: RowProps) {
             </IconButton>
         </div>);
 
-    let conclusion  = <>props.goal.conclusion</>;
+    let conclusion  = <span className="conclusion" dangerouslySetInnerHTML={{ __html: props.goal.conclusionHTML }} />;
     if(props.isInitial) {
         conclusion = (
                         <TextField

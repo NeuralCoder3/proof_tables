@@ -21,11 +21,13 @@ export interface CoqGoalInfo {
 export interface Hypothesis {
     name: string;
     type: string;
+    typeHTML?: string;
 }
 
 export interface Goal {
     hypotheses: Hypothesis[];
     conclusion: string;
+    conclusionHTML: string;
 }
 
 export type GoalMap = Map<number, Goal[]>;

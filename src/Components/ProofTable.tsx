@@ -23,7 +23,6 @@ interface RowTree {
 
 export default function ProofTable(props: TableProps) {
 
-  // let goal = 'X -> X -> X \\/ Y';
   let initGoal = '(X /\\ Y) /\\ Z -> X /\\ (Y /\\ Z)';
   let initAssumptions: Hypothesis[] = [
                 { name: 'X', type: 'Prop' },
@@ -34,15 +33,16 @@ export default function ProofTable(props: TableProps) {
   const url = new URL(window.location.href);
   const goalParam = url.searchParams.get("goal");
   if(goalParam) {
-    initGoal = goalParam;
+    initGoal = decodeURIComponent(goalParam);
   }
+  if(initGoal.endsWith(".")) initGoal = initGoal.substring(0,initGoal.length-1).trim();
   // GET request assumptions
   // split by ; and then :
   const assumptionsParam = url.searchParams.get("assumptions");
   if(assumptionsParam) {
     initAssumptions = assumptionsParam.split(";").map(a => {
       const [name, type] = a.split(":");
-      return {name, type};
+      return {name, type:decodeURIComponent(type)};
     });
   }
 
@@ -87,13 +87,16 @@ export default function ProofTable(props: TableProps) {
         let newAssumptions : Hypothesis[] = [];
         // parse away all "forall ([name]:[type]),"
         let newGoal = goal;
+        // strip trailing .
+        if(newGoal.endsWith(".")) newGoal = newGoal.substring(0,newGoal.length-1).trim();
         while(newGoal.startsWith("forall")){
             // get part until first comma
             const i = newGoal.indexOf(",");
             const part = newGoal.substring(0,i+1).trim();
             if (part.indexOf(":") === -1) break;
             // only second order parameters
-            if (part.indexOf("Prop") === -1) break;
+            if (part.indexOf("Prop") === -1 &&
+                part.indexOf("Type") === -1) break;
             // remove part from goal
             newGoal = newGoal.substring(i+1).trim();
             // get name and type
@@ -116,31 +119,23 @@ export default function ProofTable(props: TableProps) {
         );
         // update url
         const url = new URL(window.location.href);
-        url.searchParams.set("goal", encodeURIComponent(newGoal));
-        url.searchParams.set("assumptions", encodeURIComponent(
+        url.searchParams.set("goal", newGoal);
+        url.searchParams.set("assumptions", 
             newAssumptions.map(a => a.name+":"+a.type).join(";")
-        ));
+        );
         window.history.replaceState({}, "", url.toString());
     }
 
     const headSid = Math.max(...Array.from(props.goalmap.keys()));
     const rows : [number,JSX.Element][] =
         Array.from(props.goalmap)
-            .filter(([sid, goals]) => sid >= props.sid)
-            .sort(([sid1, goals1], [sid2, goals2]) => sid1 - sid2)
+            .filter(([sid, _]) => sid >= props.sid)
+            .sort(([sid1, _], [sid2, _2]) => sid1 - sid2)
             .map(([sid, goals]) =>
                 [sid,<Row key={sid}
                     isHead={sid === headSid}
                     goal={
                         goals[0]
-                        // {
-                        //     ...goals[0],
-                        //     hypotheses: goals[0].hypotheses.filter(h =>
-                        //         !props.goalmap.has(sid-1) ||
-                        //         !props.goalmap.get(sid-1)!.some(g =>
-                        //             g.hypotheses.some(h2 => h2.name === h.name)
-                        //         ))
-                        // }
                     }
                     prevGoal={
                         props.goalmap.get(sid - 1)?.[0]
@@ -150,8 +145,6 @@ export default function ProofTable(props: TableProps) {
                         rules[sid] : null}
                     rollback={() => {
                         props.rollback(sid + 1);
-                        // setRules({...rules, [sid]: ""});
-                        // filter all sids larger than sid
                         setRules(Object.fromEntries(
                             Object.entries(rules).filter(([sid2, _]) => +sid2 < sid)
                         ));
@@ -173,8 +166,6 @@ export default function ProofTable(props: TableProps) {
                 ]
             );
 
-    // let groups = [];
-    // let goalCount = 0;
     const tree: RowTree = {
         expectedChildren: 1,
         goalCount: 1,
@@ -253,9 +244,6 @@ export default function ProofTable(props: TableProps) {
                             {
                                 tree.children.map(child => 
                                     <div 
-                                    // style={{ width: 
-                                    //     // Math.round(100/tree.children.length-1)+"%" }}
-                                    //     Math.round(100/tree.expectedChildren-1)+"%" }}
                                         className="subprooftable"
                                         >
                                     {renderTree(child,false)}
@@ -266,11 +254,6 @@ export default function ProofTable(props: TableProps) {
                                 // render expected children - actual children many boxes
                                 Array.from({length:tree.expectedChildren-tree.children.length}).map((_,i) =>
                                     <span key={i} className="proofblock"></span>
-                                    // <div style={{ width: 
-                                    //     Math.round(100/tree.children.length-1)+"%" }}
-                                    //     className="subprooftable"
-                                    //     >
-                                    // </div>
                                 )
                             }
                         </td>
@@ -278,10 +261,6 @@ export default function ProofTable(props: TableProps) {
                 </tbody>
             </table>);
     }
-
-
-    // console.log("Rendering table with", rows.length, "rows.");
-    // console.log("goalmap:", props.goalmap);
 
     // force update when entries in goalmap changes
     useEffect(() => {
@@ -307,34 +286,6 @@ export default function ProofTable(props: TableProps) {
     return (
         <div className="proofcontainer">
             {renderTree(tree)}
-            {/* <br />
-            <br />
-            <br />
-            <table className="prooftable">
-                <thead>
-                    <tr>
-                        <th>Assumptions</th>
-                        <th>Goal</th>
-                        <th>Rule</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows}
-                </tbody>
-            </table> */}
-                    {/* <tr>
-                        <td colSpan={3}>
-                            <table style={{ width: "50%" }}>
-                                <tbody>
-                                    <tr>
-                                        <td>A</td>
-                                        <td>A</td>
-                                        <td>A</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </td>
-                    </tr> */}
             <br />
             <Button
                 onClick={() => {
@@ -352,7 +303,6 @@ export default function ProofTable(props: TableProps) {
                       description={"The underlying Coq proof script."}
                       defaultValue={popupContent}
                       onConfirm={() => {
-                        // setShowPopup(false);
                         return null;
                       }}
                       readonly={true}
