@@ -79,16 +79,23 @@ export default function ProofTable(props: TableProps) {
 
     const [rules, setRules] = useState<{ [sid: number]: string }>({});
 
-    const overwriteGoal = (goal: string) => {
+    const overwriteGoal = (newGoalString: string) => {
+        let newGoal = newGoalString;
+        // strip trailing .
+        if(newGoal.endsWith(".")) newGoal = newGoal.substring(0,newGoal.length-1).trim();
+        if (newGoal === "") return;
+        if (newGoal === goal) return;
         props.rollback(props.sid+1);
         setRules(Object.fromEntries(
             Object.entries(rules).filter(([sid2, _]) => +sid2 < props.sid+1)
         ));
         let newAssumptions : Hypothesis[] = [];
         // parse away all "forall ([name]:[type]),"
-        let newGoal = goal;
-        // strip trailing .
-        if(newGoal.endsWith(".")) newGoal = newGoal.substring(0,newGoal.length-1).trim();
+        // Coq support
+        // forall (P Q: Prop), P \/ Q -> Q \/ P.
+        // forall (P: Prop) (Q: Prop), P \/ Q -> Q \/ P.
+        // forall (P: Prop), forall (Q: Prop), P \/ Q -> Q \/ P
+        // We only support the last one below for assumption parsing
         while(newGoal.startsWith("forall")){
             // get part until first comma
             const i = newGoal.indexOf(",");

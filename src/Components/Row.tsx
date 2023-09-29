@@ -46,7 +46,8 @@ function mkAliasRule(
     args: ArgType[],
     alias?: string,
 ) {
-    alias = alias || toSnake(name);
+    // alias = alias || toSnake(name); // for using snake-case tactics 
+    alias = alias || name;
     return {
         name, args,
         builder: (args: ArgType[]) => alias + " " + args.join(" ")
@@ -79,7 +80,7 @@ const rules : Rule[] = [
     mkAliasRule("EqualsElim", ["Assumption"]),
     mkAliasRule("EqualsElimRev", ["Assumption"]),
     mkAliasRule("Defn", ["Text"]),
-    mkAliasRule("Axiom", ["Text"]),
+    mkAliasRule("axiom", ["Text"]),
 ]
 
 type ruleName = typeof rules[number]["name"];

@@ -30,6 +30,7 @@ TODOs:
 - [x] show Coq proof
     - [ ] use tree structure to make it cleaner
 - [x] check assumption name and type to make sure
+- [ ] Advanced Assumption Parsing
 - [ ] Export as
     - [ ] Coq
     - [ ] Markdown

@@ -14,6 +14,7 @@ Assumption H
 *)
 Ltac assumption H :=
   exact H.
+Ltac Assumption H := assumption H.
 
 (*
 TruthIntro
@@ -21,6 +22,7 @@ TruthIntro
 *)
 Ltac truth_intro :=
   exact I.
+Ltac TruthIntro := truth_intro.
 
 (*
 FalsityElim
@@ -28,6 +30,7 @@ FalsityElim
 *)
 Ltac falsity_elim H :=
   exfalso; exact H.
+Ltac FalsityElim H := falsity_elim H.
 
 (*
 AndElim H
@@ -44,6 +47,7 @@ Ltac and_elim H :=
   apply (and_elim H1); clear H1;
   intros H2 H3.
   (* destruct H1 as [H2 H3]. *)
+Ltac AndElim H := and_elim H.
 
 (*
 AndIntro
@@ -54,6 +58,7 @@ AndIntro
 Ltac and_intro :=
   (* conj. *)
   split.
+Ltac AndIntro := and_intro.
 
 (*
 OrElim H
@@ -67,6 +72,7 @@ Ltac or_elim H :=
   let H4 := get_name in
   pose proof H as H2;
   destruct H2 as [H3 | H4].
+Ltac OrElim H := or_elim H.
 
 (*
 OrIntro1
@@ -75,6 +81,7 @@ OrIntro1
 *)
 Ltac or_intro1 :=
   left.
+Ltac OrIntro1 := or_intro1.
 
 (*
 OrIntro2
@@ -83,6 +90,7 @@ OrIntro2
 *)
 Ltac or_intro2 :=
   right.
+Ltac OrIntro2 := or_intro2.
 
 (*
 ImplApply H
@@ -91,6 +99,7 @@ ImplApply H
 *)
 Ltac impl_apply H :=
   apply H.
+Ltac ImplApply H := impl_apply H.
 
 (*
 ImplSpecialize H H2
@@ -101,6 +110,7 @@ Ltac impl_specialize H H2 :=
   let H3 := get_name in
   pose proof H as H3;
   specialize (H3 H2).
+Ltac ImplSpecialize H H2 := impl_specialize H H2.
 
 (*
 ImplIntro
@@ -110,6 +120,7 @@ ImplIntro
 Ltac impl_intro :=
   let H := get_name in
   intro H.
+Ltac ImplIntro := impl_intro.
 
 (*
 NegElim H
@@ -120,6 +131,7 @@ Ltac neg_elim H :=
   let H2 := get_name in
   pose proof H as H2;
   unfold not in H2.
+Ltac NegElim H := neg_elim H.
 
 (*
 NegIntro
@@ -129,7 +141,7 @@ NegIntro
 Ltac neg_intro :=
   let H := get_name in
   unfold not; intro H.
-
+Ltac NegIntro := neg_intro.
 
 (*
 Assert φ
@@ -138,6 +150,7 @@ Assert φ
 2) φ | χ
 *)
 (* already exists *)
+Ltac Assert H := assert H.
 
 (*
 ExcludedMiddle φ
@@ -149,6 +162,7 @@ Ltac excluded_middle H :=
   let H2 := get_name in
   let H3 := get_name in
   destruct (classic H) as [H2 | H3].
+Ltac ExcludedMiddle H := excluded_middle H.
 
 (*
 ForallIntro n
@@ -157,6 +171,7 @@ y:object | φ[y/x]
 *)
 Ltac forall_intro y :=
   intro y.
+Ltac ForallIntro y := forall_intro y.
 
 (*
 ForallElim t
@@ -167,6 +182,7 @@ Ltac forall_elim H t :=
   let H2 := get_name in
   pose proof H as H2;
   specialize (H2 t).
+Ltac ForallElim H t := forall_elim H t.
 
 (*
 ExistsIntro t
@@ -175,6 +191,7 @@ ExistsIntro t
 *)
 Ltac exists_intro t :=
   exists t.
+Ltac ExistsIntro t := exists_intro t.
 
 (*
 ExistsElim
@@ -189,6 +206,7 @@ Ltac exists_elim H y :=
   (* apply (exists_elim H2); clear H2;
   intros y H2. *)
   destruct H2 as [y H2].
+Ltac ExistsElim H y := exists_elim H y.
 
 (*
 EqualsIntro
@@ -196,6 +214,7 @@ EqualsIntro
 *)
 Ltac equals_intro :=
   reflexivity.
+Ltac EqualsIntro := equals_intro.
 
 (*
 EqualsElim
@@ -207,6 +226,8 @@ Ltac equals_elim H :=
   rewrite H.
 Ltac equals_elim_rev H :=
   rewrite <- H.
+Ltac EqualsElim H := equals_elim H.
+Ltac EqualsElimRev H := equals_elim_rev H.
 
 (* Additional tactics used but not on sheet *)
 (*
@@ -215,11 +236,13 @@ Defn
 *)
 Ltac defn H :=
   unfold H in *.
+Ltac Defn H := defn H.
 
 Ltac axiom H :=
   (* assert H by admit. *)
   let A := fresh "A0" in
   pose proof H as A.
+Ltac AxiomH H := axiom H.
 
 
 Definition leq (x y:nat) := exists z, x+z = y.
