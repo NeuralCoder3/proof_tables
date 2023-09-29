@@ -1,6 +1,6 @@
 import TextField from "@mui/material/TextField";
 import { Goal } from "./interfaces";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconButton, MenuItem, Select } from "@mui/material";
 import UndoIcon from '@mui/icons-material/Undo';
 import LoginIcon from '@mui/icons-material/Login';
@@ -12,11 +12,11 @@ export interface RowProps {
     rule: string | null
     applyRule: (rule: string) => void
     rollback: () => void
-    setGoal: (goal:string) => void
+    setGoal: (goal: string) => void
     isHead: boolean
 }
 
-type ArgType = "Text" | "Assumption" | "Name" 
+type ArgType = "Text" | "Assumption" | "Name"
 
 interface Rule {
     name: string,
@@ -55,7 +55,7 @@ function mkAliasRule(
 }
 
 // see https://github.com/NeuralCoder3/script_proofs/blob/main/coq/tactics.v
-const rules : Rule[] = [
+const rules: Rule[] = [
     mkRule("Custom", ["Text"], (args: ArgType[]) => args[0]),
     mkAliasRule("Assumption", ["Assumption"]),
     mkAliasRule("TruthIntro", []),
@@ -75,7 +75,7 @@ const rules : Rule[] = [
     mkAliasRule("ForallIntro", ["Name"]),
     mkAliasRule("ForallElim", ["Assumption", "Text"]),
     mkAliasRule("ExistsIntro", ["Text"]),
-    mkAliasRule("ExistsElim", ["Assumption","Name"]),
+    mkAliasRule("ExistsElim", ["Assumption", "Name"]),
     mkAliasRule("EqualsIntro", []),
     mkAliasRule("EqualsElim", ["Assumption"]),
     mkAliasRule("EqualsElimRev", ["Assumption"]),
@@ -85,11 +85,25 @@ const rules : Rule[] = [
 
 type ruleName = typeof rules[number]["name"];
 
+const FONT_SIZE = 7;
+const DEFAULT_INPUT_WIDTH = 200;
+
 export default function Row(props: RowProps) {
     const [rule, setRule] = useState<ruleName>("Custom");
     const [ruleArgs, setRuleArgs] = useState<{ [i: number]: string }>({});
     const [conclusionText, setConclusionText] = useState(props.goal.conclusion);
-    if(!props.goal) return (
+
+    const [inputWidth, setInputWidth] = useState(DEFAULT_INPUT_WIDTH);
+
+    useEffect(() => {
+        if (conclusionText.length * FONT_SIZE > DEFAULT_INPUT_WIDTH) {
+            setInputWidth((conclusionText.length + 1) * FONT_SIZE);
+        } else {
+            setInputWidth(DEFAULT_INPUT_WIDTH);
+        }
+    }, [conclusionText]);
+
+    if (!props.goal) return (
         <tr>
             <td></td>
             <td></td>
@@ -111,7 +125,7 @@ export default function Row(props: RowProps) {
             </div>
         );
 
-    const orderedArgs : ArgType[] =
+    const orderedArgs: ArgType[] =
         Object.entries(ruleArgs).sort(([i1, _], [i2, __]) => +i1 - +i2).map(([_, arg]) => arg as ArgType);
 
     const selectedRule = rules.find(r => r.name === rule);
@@ -123,6 +137,7 @@ export default function Row(props: RowProps) {
             <Select
                 id="rule-selector"
                 value={rule}
+                size="medium"
                 label="Rule"
                 onChange={e => {
                     const rule = e.target.value;
@@ -139,32 +154,34 @@ export default function Row(props: RowProps) {
             {
                 selectedRule?.args.map((arg, i) => {
                     if (arg === "Text" || arg === "Name") {
-                        return(
-                        <TextField
-                            key={i}
-                            label={arg}
-                            variant="outlined"
-                            size="small"
-                            sx={{ input: { color: 'white' } }}
-                            value={ruleArgs[i]}
-                            onChange={e => {
-                                setRuleArgs({ ...ruleArgs, [i]: 
-                                    arg === "Name" ? 
-                                    e.target.value.replace(/\s+/g, "") : // remove whitespace
-                                    e.target.value 
-                                });
-                            }}
-                        onKeyDown={e => {
-                            if (e.key === "Enter") {
-                                props.applyRule(selectedRule?.builder(orderedArgs) || "");
-                            }
-                        }}
-                        />);
+                        return (
+                            <TextField
+                                key={i}
+                                label={arg}
+                                variant="outlined"
+                                size="medium"
+                                sx={{ input: { color: 'white' } }}
+                                value={ruleArgs[i]}
+                                onChange={e => {
+                                    setRuleArgs({
+                                        ...ruleArgs, [i]:
+                                            arg === "Name" ?
+                                                e.target.value.replace(/\s+/g, "") : // remove whitespace
+                                                e.target.value
+                                    });
+                                }}
+                                onKeyDown={e => {
+                                    if (e.key === "Enter") {
+                                        props.applyRule(selectedRule?.builder(orderedArgs) || "");
+                                    }
+                                }}
+                            />);
                     } else if (arg === "Assumption") {
                         return (<Select
                             id="assumption-selector"
-                            key = {i}
+                            key={i}
                             value={ruleArgs[i]}
+                            size="medium"
                             onChange={e => {
                                 const rule = e.target.value;
                                 setRuleArgs({ ...ruleArgs, [i]: rule });
@@ -176,7 +193,7 @@ export default function Row(props: RowProps) {
                                 )
                             }
                         </Select>);
-                    } 
+                    }
                 })
             }
             <IconButton
@@ -190,24 +207,30 @@ export default function Row(props: RowProps) {
             </IconButton>
         </div>);
 
-    let conclusion  = <span className="conclusion" dangerouslySetInnerHTML={{ __html: props.goal.conclusionHTML }} />;
-    if(props.isInitial) {
+    let conclusion = <span className="conclusion" dangerouslySetInnerHTML={{ __html: props.goal.conclusionHTML }} />;
+    if (props.isInitial) {
         conclusion = (
-                        <TextField
-                            label={"Goal"}
-                            variant="outlined"
-                            size="small"
-                            sx={{ input: { color: 'white' } }}
-                            value={conclusionText}
-                            onChange={e => {
-                                setConclusionText(e.target.value);
-                            }}
-                        onKeyDown={e => {
-                            if (e.key === "Enter") {
-                                props.setGoal(conclusionText);
-                            }
-                        }}
-                        />
+            <TextField
+                label={"Goal"}
+                variant="outlined"
+                size="medium"
+                sx={{
+                    input: { color: 'white', fontSize: FONT_SIZE+"rm" },
+                }}
+                value={conclusionText}
+                onChange={e => {
+                    setConclusionText(e.target.value);
+                }}
+                fullWidth
+                onKeyDown={e => {
+                    if (e.key === "Enter") {
+                        props.setGoal(conclusionText);
+                    }
+                }}
+                InputProps={{
+                    style: { width: `${inputWidth}px` }
+                }}
+            />
         );
     }
 
@@ -215,7 +238,7 @@ export default function Row(props: RowProps) {
     return (
         <tr className={props.isHead ? "proofhead" : ""}>
             <td>{assumptions}</td>
-            <td>{conclusion}</td>
+            <td style={{ width: "max-content" }}>{conclusion}</td>
             <td>
                 {props.rule ?
                     (

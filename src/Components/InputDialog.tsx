@@ -56,7 +56,7 @@ export function InputDialog({
           helperText={error}
           disabled={readonly}
           multiline
-          rows={4}
+          rows={20}
         />
       </DialogContent>
       <DialogActions>
